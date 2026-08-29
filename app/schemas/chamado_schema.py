@@ -1,6 +1,7 @@
 from marshmallow import Schema, fields, validate
 
 from app.models.chamado import PRIORIDADES, STATUS
+from app.schemas.comentario_schema import ComentarioSchema
 
 
 class ChamadoSchema(Schema):
@@ -13,6 +14,7 @@ class ChamadoSchema(Schema):
     status = fields.String(load_default="aberto", validate=validate.OneOf(STATUS))
     departamento_id = fields.Integer(required=True)
     criado_em = fields.DateTime(dump_only=True)
+    comentarios = fields.Nested(ComentarioSchema, many=True, dump_only=True)
 
 
 class ChamadoUpdateSchema(Schema):

@@ -20,8 +20,10 @@ API RESTful para **Gestão de Chamados de TI**, desenvolvida em Flask, com persi
 ## Domínio
 
 - **Departamento** (1) → **Chamado** (N): cada chamado pertence obrigatoriamente a um departamento.
+- **Chamado** (1) → **Comentário** (N): cada chamado pode acumular vários comentários (histórico de atendimento).
 - `Departamento`: `id`, `nome`, `responsavel`
 - `Chamado`: `id`, `titulo`, `descricao`, `prioridade` (`baixa`, `media`, `alta`), `status` (`aberto`, `em_andamento`, `resolvido`), `departamento_id`, `criado_em`
+- `Comentário`: `id`, `texto`, `autor`, `chamado_id`, `criado_em`
 
 ## Arquitetura
 
@@ -270,6 +272,50 @@ curl -X PATCH http://127.0.0.1:5000/chamados/1 \
 
 ```bash
 curl -X DELETE http://127.0.0.1:5000/chamados/1
+```
+
+> `GET /chamados/<id>` (e a listagem) já retorna o campo `comentarios` aninhado com o histórico do chamado.
+
+### Comentários
+
+Comentários registram o histórico de atendimento de um chamado (ex.: atualizações de um técnico). Não têm PUT/PATCH — são um registro imutável, apenas criados e removidos.
+
+| Método | Rota                                          | Descrição                              |
+|--------|------------------------------------------------|------------------------------------------|
+| GET    | `/chamados/<chamado_id>/comentarios`           | Lista os comentários de um chamado       |
+| POST   | `/chamados/<chamado_id>/comentarios`           | Adiciona um comentário ao chamado        |
+| DELETE | `/chamados/<chamado_id>/comentarios/<id>`      | Remove um comentário                     |
+
+**Adicionar um comentário:**
+
+```bash
+curl -X POST http://127.0.0.1:5000/chamados/1/comentarios \
+  -H "Content-Type: application/json" \
+  -d "{\"texto\": \"Verificado com o usuário, reiniciando a máquina\", \"autor\": \"Técnico João\"}"
+```
+
+Resposta (`201 Created`):
+
+```json
+{
+  "id": 1,
+  "texto": "Verificado com o usuário, reiniciando a máquina",
+  "autor": "Técnico João",
+  "chamado_id": 1,
+  "criado_em": "2026-08-29T00:12:29.091913"
+}
+```
+
+**Listar comentários de um chamado:**
+
+```bash
+curl http://127.0.0.1:5000/chamados/1/comentarios
+```
+
+**Remover um comentário:**
+
+```bash
+curl -X DELETE http://127.0.0.1:5000/chamados/1/comentarios/1
 ```
 
 ## Tratamento de erros

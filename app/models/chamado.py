@@ -19,3 +19,11 @@ class Chamado(db.Model):
     departamento_id = db.Column(
         db.Integer, db.ForeignKey("departamentos.id"), nullable=False
     )
+
+    comentarios = db.relationship(
+        "Comentario",
+        backref="chamado",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="Comentario.criado_em",
+    )
