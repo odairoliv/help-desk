@@ -7,15 +7,11 @@ API RESTful para **Gestão de Chamados de TI**, desenvolvida em Flask, com persi
 - [Domínio](#domínio)
 - [Arquitetura](#arquitetura)
 - [Pré-requisitos](#pré-requisitos)
-- [1. Baixar o projeto](#1-baixar-o-projeto)
-- [2. Criar e ativar o ambiente virtual](#2-criar-e-ativar-o-ambiente-virtual)
-- [3. Instalar as dependências](#3-instalar-as-dependências)
-- [4. Configurar variáveis de ambiente](#4-configurar-variáveis-de-ambiente)
-- [5. Criar o banco de dados (migrações)](#5-criar-o-banco-de-dados-migrações)
-- [6. Rodar a API](#6-rodar-a-api)
-- [Como usar — endpoints e exemplos](#como-usar--endpoints-e-exemplos)
+- [Passo a passo para executar o projeto](#passo-a-passo-para-executar-o-projeto)
+- [Testando a API pelo Postman](#testando-a-api-pelo-postman)
 - [Tratamento de erros](#tratamento-de-erros)
 - [Resetar o banco de dados](#resetar-o-banco-de-dados)
+- [Problemas comuns](#problemas-comuns)
 
 ## Domínio
 
@@ -46,22 +42,35 @@ migrations/     # Histórico de migrações do banco (Alembic/Flask-Migrate)
 
 - [Python 3.11+](https://www.python.org/downloads/) instalado e no `PATH` (`python --version`)
 - [Git](https://git-scm.com/downloads)
-- Opcional: um cliente HTTP para testar a API — [Postman](https://www.postman.com/downloads/), [Insomnia](https://insomnia.rest/download) ou `curl` (já vem no Windows 10/11, macOS e Linux)
+- [Postman](https://www.postman.com/downloads/) instalado (usado nos exemplos abaixo; Insomnia ou `curl` também funcionam)
 
-## 1. Baixar o projeto
+## Passo a passo para executar o projeto
+
+Siga **nessa ordem**. Cada passo depende do anterior.
+
+### 1. Baixar o projeto
 
 ```bash
 git clone https://github.com/odairoliv/help-desk.git
 cd help-desk
 ```
 
-## 2. Criar e ativar o ambiente virtual
+### 2. Criar e ativar o ambiente virtual
 
-**Windows (PowerShell ou CMD):**
+**Windows (PowerShell):**
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
+```
+
+> Se o PowerShell bloquear a ativação com um erro de política de execução, rode antes: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned`
+
+**Windows (CMD):**
+
+```bash
+python -m venv .venv
+.venv\Scripts\activate.bat
 ```
 
 **Linux/macOS:**
@@ -71,15 +80,15 @@ python3 -m venv .venv
 source .venv/bin/activate
 ```
 
-Quando ativado, o prompt do terminal passa a exibir `(.venv)` no início da linha.
+Quando ativado, o prompt do terminal passa a exibir `(.venv)` no início da linha. **Todos os comandos seguintes assumem o ambiente virtual ativado.**
 
-## 3. Instalar as dependências
+### 3. Instalar as dependências
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 4. Configurar variáveis de ambiente
+### 4. Configurar variáveis de ambiente
 
 Copie o arquivo de exemplo:
 
@@ -108,29 +117,24 @@ pip install pymysql
 DATABASE_URL=mysql+pymysql://usuario:senha@localhost/helpdesk
 ```
 
-## 5. Criar o banco de dados (migrações)
+### 5. Criar o banco de dados (migrações)
 
-Com o ambiente virtual ativado, rode:
-
-```bash
-flask db init
-flask db migrate -m "estrutura inicial"
-flask db upgrade
-```
-
-- `flask db init` — cria a pasta `migrations/` (só é necessário rodar uma vez; se ela já existir no repositório, pule este passo).
-- `flask db migrate` — gera o script de migração a partir dos modelos.
-- `flask db upgrade` — aplica a migração e cria as tabelas no banco.
-
-Se a pasta `migrations/` já vier no repositório (é o caso deste projeto), basta rodar:
+A pasta `migrations/` já vem pronta no repositório, então basta aplicar o que já existe:
 
 ```bash
 flask db upgrade
 ```
 
-> ⚠️ **Não pule este passo.** Sem rodar `flask db upgrade`, o arquivo `helpdesk.db` não é criado (ele fica fora do Git, no `.gitignore`) e qualquer requisição vai falhar com `500 Internal Server Error` / `{"error": "Erro interno no servidor"}`, porque as tabelas não existem. Se isso acontecer, pare o `python run.py`, rode `flask db upgrade` e inicie o servidor de novo.
+> ⚠️ **Este passo é obrigatório e não pode ser pulado.** O arquivo `helpdesk.db` não vem no Git (está no `.gitignore`) — sem rodar `flask db upgrade`, as tabelas não existem e qualquer chamada à API retorna `500 Internal Server Error` com `{"error": "Erro interno no servidor"}`. Sempre que clonar o projeto em uma pasta/máquina nova, ou apagar o `helpdesk.db`, rode este comando de novo antes de usar a API.
 
-## 6. Rodar a API
+Só é necessário recriar as migrações do zero (`flask db init` + `flask db migrate`) se você alterar algum modelo em `app/models/`. Nesse caso:
+
+```bash
+flask db migrate -m "descricao da mudanca"
+flask db upgrade
+```
+
+### 6. Rodar a API
 
 ```bash
 python run.py
@@ -142,183 +146,173 @@ Saída esperada:
 * Running on http://127.0.0.1:5000
 ```
 
-A API está no ar em **`http://127.0.0.1:5000`**. Deixe esse terminal aberto enquanto for usar a API.
+A API está no ar em **`http://127.0.0.1:5000`**. Deixe esse terminal aberto — é nele que aparecem os logs e eventuais erros enquanto você usa a API.
 
-## Como usar — endpoints e exemplos
+### 7. Testar no Postman
 
-Todos os exemplos abaixo usam `curl`. Se preferir, importe as mesmas requisições no Postman/Insomnia trocando `curl` pelos campos de método/URL/body.
+Abra o Postman e siga a seção [Testando a API pelo Postman](#testando-a-api-pelo-postman) abaixo.
+
+## Testando a API pelo Postman
+
+Não é preciso importar nenhuma coleção — é só criar uma nova aba de requisição no Postman (`+`) e preencher método, URL e corpo conforme cada exemplo.
+
+Estrutura de cada requisição no Postman:
+1. Escolha o **método** (GET, POST, PUT, PATCH ou DELETE) no dropdown à esquerda da barra de URL.
+2. Cole a **URL** no campo ao lado.
+3. Quando houver corpo (POST/PUT/PATCH): clique na aba **Body** → marque **raw** → mude o tipo de `Text` para **JSON** (dropdown à direita) → cole o JSON do exemplo.
+4. Clique em **Send**.
+
+> **Ordem recomendada:** crie primeiro um Departamento, depois um Chamado (que referencia o `id` do departamento), depois um Comentário (que referencia o `id` do chamado). É a ordem usada nos exemplos abaixo.
 
 ### Departamentos
 
-| Método | Rota                     | Descrição                                     |
-|--------|--------------------------|------------------------------------------------|
-| GET    | `/departamentos`         | Lista departamentos (filtros: `nome`, `page`, `per_page`) |
-| GET    | `/departamentos/<id>`    | Consulta um departamento pelo id               |
-| POST   | `/departamentos`         | Cria um novo departamento                      |
-| PUT    | `/departamentos/<id>`    | Atualiza **todos** os campos do departamento   |
-| PATCH  | `/departamentos/<id>`    | Atualiza **apenas** os campos enviados         |
-| DELETE | `/departamentos/<id>`    | Remove o departamento (e seus chamados)        |
+| Método | URL                                    | Descrição                                     |
+|--------|-----------------------------------------|------------------------------------------------|
+| GET    | `http://127.0.0.1:5000/departamentos`  | Lista departamentos (aceita `?nome=`, `?page=`, `?per_page=` na aba **Params**) |
+| GET    | `http://127.0.0.1:5000/departamentos/1`| Consulta o departamento de id 1                |
+| POST   | `http://127.0.0.1:5000/departamentos`  | Cria um novo departamento                      |
+| PUT    | `http://127.0.0.1:5000/departamentos/1`| Atualiza **todos** os campos do departamento 1 |
+| PATCH  | `http://127.0.0.1:5000/departamentos/1`| Atualiza **apenas** os campos enviados         |
+| DELETE | `http://127.0.0.1:5000/departamentos/1`| Remove o departamento 1 (e seus chamados)      |
 
-**Criar um departamento:**
+**1. Criar um departamento**
+- Método: `POST` — URL: `http://127.0.0.1:5000/departamentos`
+- Body → raw → JSON:
+  ```json
+  { "nome": "Infraestrutura", "responsavel": "Maria Silva" }
+  ```
+- Resposta esperada (`201 Created`):
+  ```json
+  { "id": 1, "nome": "Infraestrutura", "responsavel": "Maria Silva" }
+  ```
 
-```bash
-curl -X POST http://127.0.0.1:5000/departamentos \
-  -H "Content-Type: application/json" \
-  -d "{\"nome\": \"Infraestrutura\", \"responsavel\": \"Maria Silva\"}"
-```
+**2. Listar departamentos**
+- Método: `GET` — URL: `http://127.0.0.1:5000/departamentos`
+- Para filtrar/paginar, use a aba **Params** do Postman e adicione as chaves `nome`, `page` ou `per_page` (ex.: `nome` = `infra`).
 
-Resposta (`201 Created`):
+**3. Consultar um departamento pelo id**
+- Método: `GET` — URL: `http://127.0.0.1:5000/departamentos/1`
 
-```json
-{ "id": 1, "nome": "Infraestrutura", "responsavel": "Maria Silva" }
-```
+**4. Atualizar totalmente (PUT — precisa enviar todos os campos)**
+- Método: `PUT` — URL: `http://127.0.0.1:5000/departamentos/1`
+- Body → raw → JSON:
+  ```json
+  { "nome": "Infraestrutura TI", "responsavel": "Maria Silva" }
+  ```
 
-**Listar departamentos (com filtro e paginação):**
+**5. Atualizar parcialmente (PATCH — só o que for enviado é alterado)**
+- Método: `PATCH` — URL: `http://127.0.0.1:5000/departamentos/1`
+- Body → raw → JSON:
+  ```json
+  { "responsavel": "João Souza" }
+  ```
 
-```bash
-curl "http://127.0.0.1:5000/departamentos?nome=infra&page=1&per_page=10"
-```
-
-**Consultar um departamento:**
-
-```bash
-curl http://127.0.0.1:5000/departamentos/1
-```
-
-**Atualizar totalmente (PUT — precisa enviar todos os campos):**
-
-```bash
-curl -X PUT http://127.0.0.1:5000/departamentos/1 \
-  -H "Content-Type: application/json" \
-  -d "{\"nome\": \"Infraestrutura TI\", \"responsavel\": \"Maria Silva\"}"
-```
-
-**Atualizar parcialmente (PATCH — só o que for enviado é alterado):**
-
-```bash
-curl -X PATCH http://127.0.0.1:5000/departamentos/1 \
-  -H "Content-Type: application/json" \
-  -d "{\"responsavel\": \"João Souza\"}"
-```
-
-**Remover:**
-
-```bash
-curl -X DELETE http://127.0.0.1:5000/departamentos/1
-```
-
-Resposta: `204 No Content` (sem corpo).
+**6. Remover**
+- Método: `DELETE` — URL: `http://127.0.0.1:5000/departamentos/1`
+- Resposta esperada: `204 No Content` (corpo vazio).
 
 ### Chamados
 
-| Método | Rota                | Descrição                                                                 |
-|--------|---------------------|----------------------------------------------------------------------------|
-| GET    | `/chamados`         | Lista chamados (filtros: `status`, `prioridade`, `departamento_id`, `page`, `per_page`) |
-| GET    | `/chamados/<id>`    | Consulta um chamado pelo id                                                |
-| POST   | `/chamados`         | Cria um novo chamado                                                       |
-| PUT    | `/chamados/<id>`    | Atualiza **todos** os campos do chamado                                    |
-| PATCH  | `/chamados/<id>`    | Atualiza **apenas** os campos enviados                                     |
-| DELETE | `/chamados/<id>`    | Remove o chamado                                                           |
+| Método | URL                                | Descrição                                                                 |
+|--------|-------------------------------------|-----------------------------------------------------------------------------|
+| GET    | `http://127.0.0.1:5000/chamados`   | Lista chamados (aceita `?status=`, `?prioridade=`, `?departamento_id=`, `?page=`, `?per_page=` na aba **Params**) |
+| GET    | `http://127.0.0.1:5000/chamados/1` | Consulta o chamado de id 1                                                  |
+| POST   | `http://127.0.0.1:5000/chamados`   | Cria um novo chamado                                                        |
+| PUT    | `http://127.0.0.1:5000/chamados/1` | Atualiza **todos** os campos do chamado 1                                   |
+| PATCH  | `http://127.0.0.1:5000/chamados/1` | Atualiza **apenas** os campos enviados                                      |
+| DELETE | `http://127.0.0.1:5000/chamados/1` | Remove o chamado 1                                                          |
 
-**Criar um chamado** (`departamento_id` precisa existir):
+**1. Criar um chamado** (o `departamento_id` precisa existir — use o id criado no passo anterior)
+- Método: `POST` — URL: `http://127.0.0.1:5000/chamados`
+- Body → raw → JSON:
+  ```json
+  {
+    "titulo": "Impressora não funciona",
+    "descricao": "Impressora do 2º andar não liga",
+    "prioridade": "media",
+    "departamento_id": 1
+  }
+  ```
+- Resposta esperada (`201 Created`):
+  ```json
+  {
+    "id": 1,
+    "titulo": "Impressora não funciona",
+    "descricao": "Impressora do 2º andar não liga",
+    "prioridade": "media",
+    "status": "aberto",
+    "departamento_id": 1,
+    "criado_em": "2026-08-29T00:04:15.481043",
+    "comentarios": []
+  }
+  ```
+- Se o `departamento_id` não existir, a resposta é `400 Bad Request`.
 
-```bash
-curl -X POST http://127.0.0.1:5000/chamados \
-  -H "Content-Type: application/json" \
-  -d "{\"titulo\": \"Impressora não funciona\", \"descricao\": \"Impressora do 2º andar não liga\", \"prioridade\": \"media\", \"departamento_id\": 1}"
-```
+**2. Listar chamados (com filtros)**
+- Método: `GET` — URL: `http://127.0.0.1:5000/chamados`
+- Na aba **Params**, adicione por exemplo `status` = `aberto` e `departamento_id` = `1`.
 
-Resposta (`201 Created`):
+**3. Consultar um chamado pelo id**
+- Método: `GET` — URL: `http://127.0.0.1:5000/chamados/1`
+- A resposta já inclui o array `comentarios` com o histórico do chamado.
 
-```json
-{
-  "id": 1,
-  "titulo": "Impressora não funciona",
-  "descricao": "Impressora do 2º andar não liga",
-  "prioridade": "media",
-  "status": "aberto",
-  "departamento_id": 1,
-  "criado_em": "2026-08-29T00:04:15.481043"
-}
-```
+**4. Atualizar totalmente (PUT)**
+- Método: `PUT` — URL: `http://127.0.0.1:5000/chamados/1`
+- Body → raw → JSON:
+  ```json
+  {
+    "titulo": "Impressora não funciona",
+    "descricao": "Ainda sem solução",
+    "prioridade": "alta",
+    "status": "em_andamento",
+    "departamento_id": 1
+  }
+  ```
 
-**Listar chamados filtrando por status e departamento:**
+**5. Atualizar só o status (PATCH)**
+- Método: `PATCH` — URL: `http://127.0.0.1:5000/chamados/1`
+- Body → raw → JSON:
+  ```json
+  { "status": "resolvido" }
+  ```
 
-```bash
-curl "http://127.0.0.1:5000/chamados?status=aberto&departamento_id=1"
-```
-
-**Consultar um chamado:**
-
-```bash
-curl http://127.0.0.1:5000/chamados/1
-```
-
-**Atualizar totalmente (PUT):**
-
-```bash
-curl -X PUT http://127.0.0.1:5000/chamados/1 \
-  -H "Content-Type: application/json" \
-  -d "{\"titulo\": \"Impressora não funciona\", \"descricao\": \"Ainda sem solução\", \"prioridade\": \"alta\", \"status\": \"em_andamento\", \"departamento_id\": 1}"
-```
-
-**Atualizar só o status (PATCH):**
-
-```bash
-curl -X PATCH http://127.0.0.1:5000/chamados/1 \
-  -H "Content-Type: application/json" \
-  -d "{\"status\": \"resolvido\"}"
-```
-
-**Remover:**
-
-```bash
-curl -X DELETE http://127.0.0.1:5000/chamados/1
-```
-
-> `GET /chamados/<id>` (e a listagem) já retorna o campo `comentarios` aninhado com o histórico do chamado.
+**6. Remover**
+- Método: `DELETE` — URL: `http://127.0.0.1:5000/chamados/1`
+- Resposta esperada: `204 No Content`.
 
 ### Comentários
 
-Comentários registram o histórico de atendimento de um chamado (ex.: atualizações de um técnico). Não têm PUT/PATCH — são um registro imutável, apenas criados e removidos.
+Comentários registram o histórico de atendimento de um chamado (ex.: atualizações de um técnico). Não têm PUT/PATCH — são um registro imutável: só são criados, listados e removidos.
 
-| Método | Rota                                          | Descrição                              |
-|--------|------------------------------------------------|------------------------------------------|
-| GET    | `/chamados/<chamado_id>/comentarios`           | Lista os comentários de um chamado       |
-| POST   | `/chamados/<chamado_id>/comentarios`           | Adiciona um comentário ao chamado        |
-| DELETE | `/chamados/<chamado_id>/comentarios/<id>`      | Remove um comentário                     |
+| Método | URL                                                          | Descrição                              |
+|--------|---------------------------------------------------------------|------------------------------------------|
+| GET    | `http://127.0.0.1:5000/chamados/1/comentarios`                | Lista os comentários do chamado 1        |
+| POST   | `http://127.0.0.1:5000/chamados/1/comentarios`                | Adiciona um comentário ao chamado 1      |
+| DELETE | `http://127.0.0.1:5000/chamados/1/comentarios/1`               | Remove o comentário de id 1              |
 
-**Adicionar um comentário:**
+**1. Adicionar um comentário** (o chamado `1` precisa existir)
+- Método: `POST` — URL: `http://127.0.0.1:5000/chamados/1/comentarios`
+- Body → raw → JSON:
+  ```json
+  { "texto": "Verificado com o usuário, reiniciando a máquina", "autor": "Técnico João" }
+  ```
+- Resposta esperada (`201 Created`):
+  ```json
+  {
+    "id": 1,
+    "texto": "Verificado com o usuário, reiniciando a máquina",
+    "autor": "Técnico João",
+    "chamado_id": 1,
+    "criado_em": "2026-08-29T00:12:29.091913"
+  }
+  ```
 
-```bash
-curl -X POST http://127.0.0.1:5000/chamados/1/comentarios \
-  -H "Content-Type: application/json" \
-  -d "{\"texto\": \"Verificado com o usuário, reiniciando a máquina\", \"autor\": \"Técnico João\"}"
-```
+**2. Listar comentários de um chamado**
+- Método: `GET` — URL: `http://127.0.0.1:5000/chamados/1/comentarios`
 
-Resposta (`201 Created`):
-
-```json
-{
-  "id": 1,
-  "texto": "Verificado com o usuário, reiniciando a máquina",
-  "autor": "Técnico João",
-  "chamado_id": 1,
-  "criado_em": "2026-08-29T00:12:29.091913"
-}
-```
-
-**Listar comentários de um chamado:**
-
-```bash
-curl http://127.0.0.1:5000/chamados/1/comentarios
-```
-
-**Remover um comentário:**
-
-```bash
-curl -X DELETE http://127.0.0.1:5000/chamados/1/comentarios/1
-```
+**3. Remover um comentário**
+- Método: `DELETE` — URL: `http://127.0.0.1:5000/chamados/1/comentarios/1`
+- Resposta esperada: `204 No Content`.
 
 ## Tratamento de erros
 
@@ -338,7 +332,7 @@ Todas as respostas de erro seguem o mesmo formato:
 | 422    | Erro de validação do payload (campo obrigatório faltando, tipo errado, valor fora da lista permitida) |
 | 500    | Erro interno não previsto                                                |
 
-Exemplo de erro de validação (`422`), ao criar um departamento sem o campo `responsavel`:
+Exemplo de erro de validação (`422`) no Postman, ao dar POST em `/departamentos` sem o campo `responsavel`:
 
 ```json
 {
@@ -349,7 +343,7 @@ Exemplo de erro de validação (`422`), ao criar um departamento sem o campo `re
 
 ## Resetar o banco de dados
 
-Para começar do zero (apaga todos os dados), com o servidor parado:
+Para começar do zero (apaga todos os dados), com o servidor parado (`Ctrl+C` no terminal):
 
 ```bash
 del helpdesk.db
@@ -357,3 +351,17 @@ flask db upgrade
 ```
 
 *(no Linux/macOS use `rm helpdesk.db`)*
+
+## Problemas comuns
+
+**`{"error": "Erro interno no servidor"}` (500) logo na primeira chamada**
+Faltou rodar `flask db upgrade` (passo 5). Pare o servidor, rode o comando e inicie de novo com `python run.py`.
+
+**Postman retorna `ECONNREFUSED` ou "Could not send request"**
+O servidor não está rodando, ou está rodando em outra porta/terminal. Confira o terminal onde rodou `python run.py` — ele precisa mostrar `Running on http://127.0.0.1:5000` e continuar aberto.
+
+**`422 Unprocessable Entity` inesperado**
+Confira se a aba **Body** do Postman está em **raw** com o tipo **JSON** selecionado (não `Text`), e se o JSON enviado é válido (aspas duplas, vírgulas corretas).
+
+**Erro ao ativar o ambiente virtual no PowerShell**
+Rode `Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned` antes de `.venv\Scripts\Activate.ps1`.
