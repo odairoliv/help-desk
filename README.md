@@ -128,6 +128,8 @@ Se a pasta `migrations/` já vier no repositório (é o caso deste projeto), bas
 flask db upgrade
 ```
 
+> ⚠️ **Não pule este passo.** Sem rodar `flask db upgrade`, o arquivo `helpdesk.db` não é criado (ele fica fora do Git, no `.gitignore`) e qualquer requisição vai falhar com `500 Internal Server Error` / `{"error": "Erro interno no servidor"}`, porque as tabelas não existem. Se isso acontecer, pare o `python run.py`, rode `flask db upgrade` e inicie o servidor de novo.
+
 ## 6. Rodar a API
 
 ```bash
